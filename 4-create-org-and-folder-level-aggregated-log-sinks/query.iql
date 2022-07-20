@@ -1,0 +1,147 @@
+/*
+     ORG AND FOLDER LEVEL AGGREGATED LOG SINK CREATION
+*/
+
+/*** create org level log bucket ***/
+INSERT INTO google.logging.buckets(
+  projectsId,
+  locationsId,
+  bucketId,
+  data__description,
+  data__retentionDays
+)
+SELECT
+  '{{ .root_projects.audit_project.projectId }}',
+  '{{ .log_sinks.org_level_bucket.location }}',
+  '{{ .log_sinks.org_level_bucket.bucketId }}',
+  '{{ .log_sinks.org_level_bucket.description }}',
+   {{ .log_sinks.org_level_bucket.retentionDays }}
+;
+
+/****
+
+SELECT name, lifecycleState FROM google.logging.buckets
+WHERE projectsId = '{{ .root_projects.audit_project.projectId }}'
+AND locationsId = '{{ .log_sinks.org_level_bucket.location }}';
+
+****/
+
+/*** create org level log sink to gcs ***/
+INSERT INTO google.logging.sinks(
+  organizationsId,
+  data__description,
+  data__destination,
+  data__name,
+  data__includeChildren
+)
+SELECT
+  '{{ .organization_id }}',
+  '{{ .log_sinks.org_level_bucket.description }}',
+  'logging.googleapis.com/projects/{{ .root_projects.audit_project.projectId }}/locations/{{ .log_sinks.org_level_bucket.location }}/buckets/{{ .log_sinks.org_level_bucket.bucketId }}',
+  '{{ .log_sinks.org_level_bucket.sink.name }}',
+  true
+;
+
+/****
+
+SELECT name, destination, writerIdentity FROM google.logging.sinks
+WHERE organizationsId = '{{ .organization_id }}'
+AND name = '{{ .log_sinks.org_level_bucket.sink.name }}';
+
+****/
+{{ $root := . }}
+/*** create folder level sinks ***/
+{{ range .log_sinks.folder_sinks }}
+/*** create {{ .environment }} pubsub topic ***/
+INSERT INTO google.pubsub.topics(
+  projectsId, 
+  topicsId,
+  data__labels,
+  data__messageStoragePolicy,
+  data__messageRetentionDuration
+)
+SELECT
+  '{{ $root.root_projects.audit_project.projectId }}',
+  '{{ .topicname }}',
+  '{ "git-org": "{{ $root.github_org }}", "git-repo": "{{ $root.github_repo }}", "environment": "{{ $root.prefix }}-{{ .environment }}", "provisioner": "stackql" }',
+  '{ "allowedPersistenceRegions": [ "{{ $root.region }}" ] }',
+  '{{ .messageRetentionDuration }}'
+;
+
+/****
+
+SELECT name FROM google.pubsub.topics
+WHERE projectsId = '{{ $root.root_projects.audit_project.projectId }}';
+
+****/
+
+/*** create {{ .environment }} pubsub sink ***/
+INSERT INTO google.logging.sinks(
+  foldersId,
+  data__name,  
+  data__description,
+  data__destination,
+  data__includeChildren,
+  data__disabled
+)
+SELECT SUBSTR(name, INSTR(name, '/')+1) AS foldersId, 
+  '{{ .logsinkname }}',
+  '{{ .logsinkdesc }}',
+  'pubsub.googleapis.com/projects/{{ $root.root_projects.audit_project.projectId }}/topics/{{ .topicname }}',
+  true,
+  false
+FROM google.cloudresourcemanager.folders 
+WHERE parent = 'organizations/{{ $root.organization_id }}' 
+AND displayName = '{{ $root.prefix }}-{{ .environment }}'
+;
+{{ end }}
+/*** create billing account sink ***/
+
+/*** create pubsub topic ***/
+INSERT INTO google.pubsub.topics(
+  projectsId, 
+  topicsId,
+  data__labels,
+  data__messageStoragePolicy,
+  data__messageRetentionDuration
+)
+SELECT
+  '{{ .root_projects.audit_project.projectId }}',
+  '{{ .log_sinks.billing_account_sink.topicname }}',
+  '{ "git-org": "{{ .github_org }}", "git-repo": "{{ .github_repo }}", "environment": "{{ .prefix }}-billing", "provisioner": "stackql" }',
+  '{ "allowedPersistenceRegions": [ "{{ .region }}" ] }',
+  '{{ .log_sinks.billing_account_sink.messageRetentionDuration }}'
+;
+
+/****
+
+SELECT name FROM google.pubsub.topics
+WHERE projectsId = '{{ .root_projects.audit_project.projectId }}';
+
+****/
+
+/*** create pubsub sink ***/
+INSERT INTO google.logging.sinks(
+  billingAccountsId,
+  data__name,  
+  data__description,
+  data__destination,
+  data__includeChildren,
+  data__disabled
+
+)
+SELECT
+  '{{ .billing_account_id }}',	
+  '{{ .log_sinks.billing_account_sink.logsinkname }}',
+  '{{ .log_sinks.billing_account_sink.logsinkdesc }}',
+  'pubsub.googleapis.com/projects/{{ .root_projects.audit_project.projectId }}/topics/{{ .log_sinks.billing_account_sink.topicname }}',
+  true,
+  false
+;
+
+/****
+
+SELECT name, destination, writerIdentity FROM google.logging.sinks
+WHERE billingAccountsId = '{{ .billing_account_id }}';
+
+****/

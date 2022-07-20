@@ -1,0 +1,4 @@
+.stackql/
+stackql.*
+*.tmp
+*-TEMPLATED.iql

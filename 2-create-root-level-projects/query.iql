@@ -1,0 +1,36 @@
+/*
+    BOOTSTRAP GCS ORG - CREATE ROOT LEVEL PROJECTS AND ENABLE APIS
+    https://cloud.google.com/foundation-toolkit
+*/
+{{ $root := . }}
+/*** create root level projects ***/
+{{range $k, $v := .root_projects}}
+--creating {{ $k }}
+INSERT INTO google.cloudresourcemanager.projects(
+  data__displayName,
+  data__parent,
+  data__projectId,
+  data__labels  
+)
+SELECT
+  '{{ $v.displayName }}',
+  'organizations/{{ $root.organization_id }}',
+  '{{ $v.projectId }}',
+  '{ "environment": "{{ $v.environment }}", "github_org": "{{ $root.github_org }}", "github_repo": "{{ $root.github_repo }}", "provisioner": "stackql" }'
+;
+
+--associating {{ $k }} with billing account {{ $root.billing_account_id }}
+EXEC google.cloudbilling.projects.updateBillingInfo @projectsId = '{{ $v.projectId }}'
+@@json = '{
+  "billingAccountName": "billingAccounts/{{ $root.billing_account_id }}"
+}';
+{{ end }}
+/*** batch enable apis ***/
+{{range $k, $v := .root_projects}}
+-- enabling services for {{ $k }}
+EXEC google.serviceusage.services.batchEnable
+@parent = '{{ $v.projectId }}'
+@@json ='{
+  "serviceIds": {{ $v.apis }}
+}';
+{{end}}

@@ -1,0 +1,73 @@
+{{ $root := . }}
+/*** create terraform service accounts ***/
+{{ range .environments }}
+-- creating terraform-{{ .name }} service account
+INSERT INTO google.iam.service_accounts(
+  projectsId,
+  data__accountId,
+  data__serviceAccount )
+SELECT
+  '{{ $root.root_projects.terraform_project.projectId }}',
+  'terraform-{{ .name }}',
+  '{ "description": "Terraform Service Account for {{ .name }}", "displayName": "terraform-{{ .name }}"}'
+;
+{{ end }}
+
+/*** create tf gcs state bucket ***/
+
+-- creating {{ .prefix }}-tf-state bucket
+INSERT INTO google.storage.buckets(
+  project,
+  data__name,
+  data__location,
+  data__locationType,
+  data__iamConfiguration,
+  data__labels
+)
+SELECT
+  '{{ $root.root_projects.terraform_project.projectId }}',
+  '{{ .prefix }}-tf-state',
+  '{{ .region }}',
+  'region',
+  '{ "publicAccessPrevention": "enforced" }',
+  '[{ "git-org": "{{ .github_org }}", "git-repo": "{{ .github_repo }}", "environment": "{{ (printf "%s-prod" .prefix) }}", "provisioner": "stackql" }]'
+;
+
+/*** create tf gcs backend and modules bucket per env ***/{{ range .environments }}
+
+-- creating {{ $root.prefix }}-tf-{{ .name }} backend state bucket
+INSERT INTO google.storage.buckets(
+  project,
+  data__name,
+  data__location,
+  data__locationType,
+  data__iamConfiguration,
+  data__labels
+)
+SELECT
+  '{{ $root.root_projects.terraform_project.projectId }}',
+  '{{ $root.prefix }}-tf-{{ .name }}',
+  '{{ $root.region }}',
+  'region',
+  '{ "publicAccessPrevention": "enforced" }',
+  '[{ "git-org": "{{ $root.github_org }}", "git-repo": "{{ $root.github_repo }}", "environment": "{{ (printf "%s-%s" $root.prefix .type) }}", "provisioner": "stackql" }]'
+;
+
+-- creating {{ $root.prefix }}-tf-modules-{{ .name }} bucket
+INSERT INTO google.storage.buckets(
+  project,
+  data__name,
+  data__location,
+  data__locationType,
+  data__iamConfiguration,
+  data__labels
+)
+SELECT
+  '{{ $root.root_projects.terraform_project.projectId }}',
+  '{{ $root.prefix }}-tf-modules-{{ .name }}',
+  '{{ $root.region }}',
+  'region',
+  '{ "publicAccessPrevention": "enforced" }',
+  '[{ "git-org": "{{ $root.github_org }}", "git-repo": "{{ $root.github_repo }}", "environment": "{{ (printf "%s-%s" $root.prefix .type) }}", "provisioner": "stackql" }]'
+;
+{{ end }}

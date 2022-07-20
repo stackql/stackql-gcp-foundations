@@ -1,0 +1,17 @@
+/*
+    BOOTSTRAP GCS ORG - CREATE FOLDERS AND ROOT LEVEL PROJECTS
+    https://cloud.google.com/foundation-toolkit
+*/
+{{ $root := . }}
+/*** create folders ***/
+{{ range .environments }}
+-- creating {{ .name }} folder
+INSERT INTO google.cloudresourcemanager.folders(
+  data__displayName,
+  data__parent
+)
+SELECT
+  '{{ (printf "%s-%s" $root.prefix .name) }}',
+  '{{ $root.root_node }}'
+;
+{{ end }}

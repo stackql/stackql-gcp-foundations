@@ -1,0 +1,21 @@
+{
+    "terraform": [
+        "stackdriver.googleapis.com",
+        "storage.googleapis.com",	
+        "cloudbilling.googleapis.com",
+        "cloudresourcemanager.googleapis.com",
+        "serviceusage.googleapis.com",
+        "compute.googleapis.com",
+        "container.googleapis.com"
+    ],
+    "audit": [
+        "bigquery.googleapis.com",
+        "stackdriver.googleapis.com",
+        "pubsub.googleapis.com"
+    ],
+    "sharedsvc": [
+        "stackdriver.googleapis.com",
+        "compute.googleapis.com",
+        "container.googleapis.com"
+    ]
+}
