@@ -1,4 +1,5 @@
 .stackql/
-stackql.*
+stackql.exe
+stackql
 *.tmp
 *-TEMPLATED.iql
