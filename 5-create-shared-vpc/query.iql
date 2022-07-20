@@ -1,0 +1,95 @@
+/*
+    PROVISION SHARED VPC
+    https://cloud.google.com/vpc/docs/provisioning-shared-vpc
+*/
+{{ $hostProject := .root_projects.sharedsvc_project.projectId }}
+{{ $sharedVpcName := .network.name }}
+-- enable shared VPC host project
+EXEC google.compute.projects.enableXpnHost
+@project = '{{ $hostProject }}';
+
+/***
+
+SELECT * FROM google.compute.projects_xpn_hosts
+WHERE project = '{{ .root_projects.sharedsvc_project.projectId }}';
+
+***/
+
+-- create custom VPC network
+
+INSERT /*+ AWAIT  */ INTO google.compute.networks
+(
+ project,
+ data__name,
+ data__autoCreateSubnetworks,
+ data__routingConfig
+) 
+SELECT
+'{{ $hostProject }}',
+'{{ $sharedVpcName }}',
+false,
+'{"routingMode": "REGIONAL"}';
+
+--
+-- create subnetworks
+--
+
+{{ range .network.subnets }}
+INSERT /*+ AWAIT  */ INTO google.compute.subnetworks
+(
+ project,
+ region,
+ data__name,
+ data__network,
+ data__ipCidrRange,
+ data__secondaryIpRanges,
+ data__privateIpGoogleAccess,
+ data__enableFlowLogs
+) 
+SELECT
+'{{ $hostProject }}',
+'{{ .region }}',
+'{{ .name }}',
+'https://compute.googleapis.com/compute/v1/projects/{{ $hostProject }}/global/networks/{{ $sharedVpcName }}',
+'{{ .cidr }}',
+'{{ .secondaryIpRanges }}',
+true,
+true;
+{{ end }}
+
+--
+-- create external ips
+--
+
+{{ range .network.extips }}
+INSERT /*+ AWAIT  */ INTO google.compute.addresses
+(
+ project,
+ region,
+ data__name
+) 
+SELECT
+'{{ $hostProject }}',
+'{{ .region }}',
+'{{ .name }}';
+{{ end }}
+
+--
+-- create router and nat gw config
+--
+
+INSERT /*+ AWAIT  */ INTO google.compute.routers
+(
+ project,
+ region,
+ data__name,
+ data__network,
+ data__nats
+)
+SELECT
+'{{ $hostProject }}',
+'{{ .region }}',
+'{{ $sharedVpcName }}-router',
+'https://compute.googleapis.com/compute/v1/projects/{{ $hostProject }}/global/networks/{{ $sharedVpcName }}',
+'{{ .network.nats }}'
+;

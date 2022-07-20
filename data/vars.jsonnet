@@ -1,12 +1,14 @@
 // variables
 local apis = import './data/apis.json';
-local organization_id = "141318256085";
-local billing_account_id = "01CF81-4B364B-8D1BDC";
-local environments = [{name: "prod", type: "prod"}, {name: "nonprod", type: "nonprod"}, {name: "datalabs", type: "nonprod"}];
-local prefix = "stackql";
-local github_org = "stackql";
-local github_repo = "stackql-gcp-foundations";
-local region = "australia-southeast1";
+local subnets = import './data/subnets.json';
+local organization_id = '141318256085';
+local billing_account_id = '01CF81-4B364B-8D1BDC';
+local environments = [{name: 'prod', type: 'prod'}, {name: 'nonprod', type: 'nonprod'}, {name: 'datalabs', type: 'nonprod'}];
+local extips = [{name: 'syd-extip1', region: 'australia-southeast1'},{name: 'syd-extip2', region: 'australia-southeast1'}];
+local prefix = 'stackql';
+local github_org = 'stackql';
+local github_repo = 'stackql-gcp-foundations';
+local region = 'australia-southeast1';
 
 {
 	organization_id: organization_id,
@@ -17,6 +19,19 @@ local region = "australia-southeast1";
 	github_org: github_org,
 	github_repo: github_repo,
 	region: region,
+    network: {
+        name: "%s-shared-vpc" % [prefix,],
+        subnets: subnets,
+        extips: extips,
+        nats: [
+			{
+			  name: "nat-config", 
+			  natIpAllocateOption: "MANUAL_ONLY", 
+			  natIps: std.map((function(x) "https://compute.googleapis.com/compute/v1/projects/%s-sharedsvc/regions/%s/addresses/%s" % [prefix, x.region, x.name,]), extips),
+			  sourceSubnetworkIpRangesToNat: "ALL_SUBNETWORKS_ALL_IP_RANGES"
+			},	
+	    ],
+    },
     root_projects: {
         "terraform_project": {
 			displayName: "%s-terraform" % [prefix,],

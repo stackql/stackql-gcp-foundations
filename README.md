@@ -106,19 +106,27 @@ stackql exec -i ./4-create-org-and-folder-level-aggregated-log-sinks/query.iql \
 --auth '{ "google": { "type": "interactive" }}'
 ```
 
-## 5. Create or Update Org Policy Constraints
+## 5. Create Shared VPC
 
-5-create-or-update-org-policy-constraints
+Enables the `sharedsvc` project as a shared VPC network host project (`enableXpnHost`).  
 
-./stackql exec -i ./5-create-or-update-org-policy-constraints/query.iql \
+Creates shared VPC network resources including custom VPC network, subnets and external IPs (as defined in `data/networking.json`), also creates router and nat gw config.  
+
+```bash 
+stackql exec -i ./5-create-shared-vpc/query.iql \
 --iqldata ./data/vars.jsonnet \
---outfile 5-create-or-update-org-policy-constraints-TEMPLATED.iql \
+--auth '{ "google": { "type": "interactive" }}'
+```
+
+./stackql exec -i ./5-create-shared-vpc/query.iql \
+--iqldata ./data/vars.jsonnet \
+--outfile 5-create-shared-vpc-TEMPLATED.iql \
 --dryrun --output text --hideheaders
 
-## 6. Create Shared VPC
+## 6. Create or Update Org Policy Constraints
 
-6-create-shared-vpc
+> Coming soon
 
-## 7. Create or Replace IAM Bindings
+## 7. Create or Update IAM Policy Bindings at the Org, Folder and Resource Levels
 
-7-create-or-replace-iam-bindings
+> Coming soon

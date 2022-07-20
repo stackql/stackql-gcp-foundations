@@ -1,0 +1,62 @@
+[
+    {
+        "name": "mel-prod",
+        "region": "australia-southeast2",
+        "cidr": "10.64.0.0/13",
+        "secondaryIpRanges": [
+            {
+                "rangeName": "pods",
+                "ipCidrRange": "172.16.0.0/14"
+            },
+            {
+                "rangeName": "services",
+                "ipCidrRange": "192.168.0.0/18"
+            }			
+        ]
+    },
+    {
+        "name": "mel-nonprod",
+        "region": "australia-southeast2",			
+        "cidr": "10.72.0.0/13",
+        "secondaryIpRanges": [
+            {
+                "rangeName": "pods",
+                "ipCidrRange": "172.20.0.0/14"
+            },
+            {
+                "rangeName": "services",
+                "ipCidrRange": "192.168.64.0/18"
+            }
+        ]		
+    },
+    {
+        "name": "syd-prod",
+        "region": "australia-southeast1",			
+        "cidr": "10.80.0.0/13",
+        "secondaryIpRanges": [
+            {
+                "rangeName": "pods",
+                "ipCidrRange": "172.24.0.0/14"
+            },
+            {
+                "rangeName": "services",
+                "ipCidrRange": "192.168.128.0/18"
+            }		
+        ]		
+    },
+    {
+        "name": "syd-nonprod",
+        "region": "australia-southeast1",			
+        "cidr": "10.88.0.0/13",
+        "secondaryIpRanges": [
+            {
+                "rangeName": "pods",
+                "ipCidrRange": "172.28.0.0/14"
+            },
+            {
+                "rangeName": "services",
+                "ipCidrRange": "192.168.192.0/18"
+            }	
+        ]		
+    }
+]
