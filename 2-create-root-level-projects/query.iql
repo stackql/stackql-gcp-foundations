@@ -28,8 +28,8 @@ EXEC google.cloudbilling.projects.updateBillingInfo @projectsId = '{{ $v.project
 /*** batch enable apis ***/
 {{range $k, $v := .root_projects}}
 -- enabling services for {{ $k }}
-EXEC google.serviceusage.services.batchEnable
-@parent = '{{ $v.projectId }}'
+EXEC google.serviceusage.services_batch.batchEnable
+@projectId = '{{ $v.projectId }}'
 @@json ='{
   "serviceIds": {{ $v.apis }}
 }';
